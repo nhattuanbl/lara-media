@@ -13,7 +13,7 @@ use League\Flysystem\FilesystemException;
 use Nhattuanbl\LaraMedia\Models\LaraMedia;
 use Nhattuanbl\LaraMedia\Services\LaraMediaService;
 
-class LaraMediaResponsiveJob implements ShouldQueue
+class ResponsiveJob implements ShouldQueue
 {
     use Queueable, Trackable;
 
@@ -38,9 +38,10 @@ class LaraMediaResponsiveJob implements ShouldQueue
 
         $took = time();
         if (config('lara-media.photo.detect_main_color')) {
-            dispatch_sync(new LaraMediaColorDetectJob($this->media, $this->service));
+            dispatch_sync(new ColorDetectJob($this->media, $this->service));
         }
 
+        usort($this->service->responsive, fn($a, $b) => $a <=> $b );
         $this->setProgressMax(count($this->service->responsive));
         foreach ($this->service->responsive as $s) {
             $this->incrementProgress();
@@ -80,9 +81,9 @@ class LaraMediaResponsiveJob implements ShouldQueue
         }
 
         $properties = $this->media->properties;
-        $properties['responsive_disk'] = $this->service->disk;
-        $properties['responsive_took'] = time() - $took;
-        $properties['responsive_ext'] = strtolower($this->service->format ?? $this->media->ext);
+        $properties['disk'] = $this->service->disk;
+        $properties['took'] = time() - $took;
+        $properties['ext'] = strtolower($this->service->format ?? $this->media->ext);
         $this->media->properties = $properties;
 
         if ($this->service->deleteOriginal) {

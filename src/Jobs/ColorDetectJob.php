@@ -45,7 +45,7 @@ class LaraMediaColorDetectJob implements ShouldQueue
         $color = sprintf("#%02x%02x%02x", $pixel['r'], $pixel['g'], $pixel['b']);
 
         $properties = $this->media->properties;
-        $properties['dominant_color'] = $color;
+        $properties['color'] = $color;
         $this->media->properties = $properties;
         $this->media->save();
 
