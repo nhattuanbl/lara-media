@@ -1,7 +1,7 @@
 ## Lara Media
 Lara Media is a media library for Laravel. It provides a simple way to store, convert, and manipulate media files.
 
-![Preview](https://i.imgur.com/POP8N0S.png "LaraMedia")
+![Preview](https://i.imgur.com/A4B8zhu.png "LaraMedia")
 
 ### Features
 - Store media information in MongoDB (other connection is not tested)
