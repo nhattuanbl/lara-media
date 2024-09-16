@@ -20,10 +20,32 @@ Lara Media is a media library for Laravel. It provides a simple way to store, co
 
 ### Requirements
 - php >= 8.2
+- laravel >= 9.18
 - ext-mongodb
 - ext-imagick
 - [imtigger/laravel-job-status](https://github.com/imTigger/laravel-job-status)
 - [ffmpeg](https://www.ffmpeg.org/)
+
+### Installation
+```bash
+composer require nhattuanbl/lara-media
+```
+
+```bash
+#publish config
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="config"
+#publish migration
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="migration"
+#publish view
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="views"
+#publish assets
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="assets"
+```
+
+```bash
+php artisan migrate
+php artisan storage:link
+```
 
 ### Config
 ```php
@@ -124,29 +146,8 @@ return [
         ],
     ],
 ];
-
 ```
 
-### Installation
-```bash
-composer require nhattuanbl/lara-swagger
-```
-
-```bash
-#publish config
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="config"
-#publish migration
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="migration"
-#publish view
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="views"
-#publish assets
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="assets"
-```
-
-```bash
-php artisan migrate
-php artisan storage:link
-```
 ### Usage
 ```php
 //App\Models\User.php
