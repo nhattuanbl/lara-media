@@ -18,13 +18,6 @@
     </div>
 </div>
 
-@assets
-<script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-<script src="https://cdn.amcharts.com/lib/5/fonts/notosans-sc.js"></script>
-@endassets
-
 @script
 <script>
     $wire.on('lazyLoaded', () => {

@@ -7,3 +7,5 @@ Route::get('/', function () {
 })->name('index');
 
 Route::get('datatable', [MediaTable::class, 'datatable'])->name('datatable');
+
+Route::post('delete/{id}', [MediaTable::class, 'delete'])->name('delete');

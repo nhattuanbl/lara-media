@@ -2,34 +2,34 @@
 
 namespace Nhattuanbl\LaraMedia\Jobs;
 
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\WithoutRelations;
 use Illuminate\Support\Facades\Storage;
 use Imagick;
+use ImagickException;
+use Nhattuanbl\LaraMedia\Contracts\PhotoRegister;
 use Nhattuanbl\LaraMedia\Models\LaraMedia;
-use Nhattuanbl\LaraMedia\Services\LaraMediaService;
 
-class LaraMediaColorDetectJob implements ShouldQueue
+class ColorDetectJob implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
-    public function __construct(public LaraMedia $media, public LaraMediaService $service)
+    public function __construct(#[WithoutRelations] public LaraMedia $media, public PhotoRegister $config)
     {
-        //
+        $this->afterCommit();
     }
 
     /**
      * Execute the job.
-     * @throws \ImagickException
-     * @throws \Exception
+     * @throws ImagickException
+     * @throws Exception
      */
     public function handle(): void
     {
         if ($this->media->is_removed) {
-            throw new \Exception('Media '.$this->media->id.' is removed');
+            throw new Exception('Media '.$this->media->id.' is removed');
         }
 
         $image = new Imagick();

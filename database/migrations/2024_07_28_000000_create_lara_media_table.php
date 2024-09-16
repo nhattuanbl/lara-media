@@ -32,32 +32,37 @@ return new class extends Migration
 //            });
 //        }
 
+        Schema::create($this->_table, function(/** @var Blueprint $table */$table) {
+            $table->id();
+            $table->string('model_id')->index()->nullable();
+            $table->string('model_type')->index()->nullable();
+            $table->string('album')->nullable()->index();
+            $table->string('disk')->index();
+            $table->string('path')->nullable()->index();
+            $table->string('name');
+            $table->string('ext');
+            $table->string('mime');
+            $table->string('hash', 32)->nullable()->index();
+            $table->unsignedBigInteger('size');
+            $table->json('properties')->default('{}');
+            $table->json('conversions')->default('{}');
+            $table->json('responsive')->default('{}');
+            $table->boolean('is_removed')->default(false)->index();
+            $table->unsignedBigInteger('total_size')->default(0);
+            $table->integer('total_files')->default(0);
+            $table->text('description')->nullable();
+            $table->timestampsTz();
+        });
 
-        if (!Schema::hasTable($this->_table)) {
-            Schema::create($this->_table, function(Blueprint $table) {
-                $table->id();
-                $table->morphs('model');
-                $table->string('album')->nullable();
-                $table->string('disk');
-                $table->string('path')->nullable();
-                $table->string('name');
-                $table->string('ext');
-                $table->string('mime');
-                $table->string('hash', 32)->nullable();
-                $table->unsignedBigInteger('size');
-                $table->json('properties')->default('{}');
-                $table->json('conversions')->default('{}');
-                $table->json('responsive')->default('{}');
-                $table->boolean('is_removed')->default(false);
-                $table->integer('total_size')->default(0);
-                $table->integer('total_files')->default(0);
-                $table->timestampsTz();
-            });
-        }
+        $jobStatusModel = new (config('job-status.model'));
+        $jobStatusConnection = $jobStatusModel->getConnectionName();
+        $jobStatusTable = $jobStatusModel->getTable();
+        DB::purge($jobStatusConnection);
 
-        Schema::table($this->_table, function (Blueprint $table) {
-            $table->index('album');
-            $table->index('hash');
+        $schema = Schema::connection($jobStatusConnection);
+        $schema->table($jobStatusTable, function (/** @var Blueprint $blueprint */ $table) {
+            $table->string('model_id')->index()->nullable();
+            $table->string('model_type')->index()->nullable();
         });
     }
 

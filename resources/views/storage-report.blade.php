@@ -9,7 +9,10 @@
                         {{ $sum_total_unit }}
                     </span>
                 </div>
-                <span class="fs-6 fw-semibold text-gray-500">Storage usage</span>
+                <span class="fs-6 fw-semibold text-gray-500">
+                    {{ $subTitle }}
+                    <span class="badge badge-light-warning fs-base">{{ $total_size_by_filter }}</span>
+                </span>
             </div>
             <div class="card-toolbar">
                 <button class="btn btn-icon btn-color-gray-500 btn-active-color-primary justify-content-end" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end" data-kt-menu-overflow="true">
@@ -21,15 +24,15 @@
                     </div>
                     <div class="separator mb-3 opacity-75"></div>
                     <div class="menu-item px-3">
-                        <a href="#" class="menu-link px-3" wire:click.prevent="viewDay">Day</a>
+                        <a href="#" class="menu-link px-3" id="btnViewTypeDay">Day</a>
                     </div>
                     <div class="menu-item px-3">
-                        <a href="#" class="menu-link px-3" wire:click.prevent="viewMonth">Month</a>
+                        <a href="#" class="menu-link px-3" id="btnViewTypeMonth">Month</a>
                     </div>
                     <div class="separator mt-3 opacity-75"></div>
                     <div class="menu-item px-3">
                         <div class="menu-content px-3 py-3">
-                            <button type="button" class="btn btn-primary btn-sm px-4">Export</button>
+                            <button type="button" class="btn btn-primary btn-sm px-4" id="btnRefreshStorageReport">Refresh</button>
                         </div>
                     </div>
                 </div>
@@ -41,33 +44,78 @@
     </div>
 </div>
 
-@assets
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-@endassets
-
 @script
 <script>
-    $wire.on('lazyLoaded', () => {
+    $wire.on('lazyLoaded', (tooltipTitle, capacityChart, filesChart, xAxis) => {
         setTimeout(() => {
-            initApex()
-        }, 50)
+            initApex(@json($tooltipTitle), @json($capacityChart), @json($filesChart), @json($xAxis));
+            KTMenu.createInstances();
 
-        KTMenu.createInstances();
+            document.querySelector('#btnViewTypeDay').addEventListener('click', function (e) {
+                e.preventDefault()
+                $wire.call('viewDay')
+            })
 
+            document.querySelector('#btnViewTypeMonth').addEventListener('click', function (e) {
+                e.preventDefault()
+                $wire.call('viewMonth')
+            })
+            document.querySelector('#btnRefreshStorageReport').addEventListener('click', function (e) {
+                e.preventDefault()
+                $wire.call('viewMonth')
+            })
+        }, 10)
     });
 
-    function initApex()
+    $wire.on('refresh', (params) => {
+        const [tooltipTitle, capacityChart, filesChart, xAxis] = params;
+        setTimeout(() => {
+            KTMenu.createInstances();
+            ApexCharts.exec('mychart', 'updateOptions', {
+                xaxis: {
+                    categories: xAxis
+                },
+                series: [
+                    {
+                        data: capacityChart
+                    }, {
+                        data: filesChart,
+                    }
+                ],
+                tooltip: {
+                    data: tooltipTitle
+                }
+            }, false, true);
+
+            document.querySelector('#btnViewTypeDay').addEventListener('click', function (e) {
+                e.preventDefault()
+                $wire.call('viewDay')
+            })
+
+            document.querySelector('#btnViewTypeMonth').addEventListener('click', function (e) {
+                e.preventDefault()
+                $wire.call('viewMonth')
+            })
+            document.querySelector('#btnRefreshStorageReport').addEventListener('click', function (e) {
+                e.preventDefault()
+                $wire.call('viewMonth')
+            })
+        }, 10);
+    });
+
+    function initApex(tooltipTitle, capacityChart, filesChart, xAxis)
     {
         new ApexCharts(document.getElementById('capacityChart'), {
             series: [{
                 name: 'Capacity',
-                data: @json($capacityChart)
+                data: capacityChart
             }, {
                 name: 'Media',
-                data: @json($filesChart)
+                data: filesChart,
             }],
 
             chart: {
+                id: 'mychart',
                 fontFamily: 'inherit',
                 type: 'area',
                 height: '100%',
@@ -95,7 +143,7 @@
                 colors: ['#1B84FF', '#17C653']
             },
             xaxis: {
-                categories: @json($xAxis),
+                categories: xAxis,
                 axisBorder: {
                     show: false,
                 },
@@ -106,7 +154,7 @@
                     style: {
                         colors: '#99A1B7',
                         fontSize: '12px'
-                    }
+                    },
                 },
                 crosshairs: {
                     position: 'front',
@@ -158,13 +206,20 @@
                 }
             },
             tooltip: {
+                data: tooltipTitle,
                 style: {
                     fontSize: '12px'
                 },
+                x: {
+                    show: true,
+                    formatter: function (value, { series, seriesIndex, dataPointIndex, w }) {
+                        return w.config.tooltip.data[dataPointIndex];
+                    }
+                },
                 y: {
                     formatter: function(value, { series, seriesIndex, dataPointIndex, w }) {
-                        return seriesIndex === 0 ? value + ' MB' : value
-                    }
+                        return seriesIndex === 0 ? (value + ' MB') : (value + ' Files')
+                    },
                 },
             },
             colors: ['#E9F3FF', '#DFFFEA'],
@@ -181,7 +236,7 @@
                 strokeColor: '#7239EA',
                 strokeWidth: 3
             }
-        }).render();
+        }).render()
     }
 
 </script>

@@ -14,6 +14,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
 
+        <link href="{{ asset('vendor/lara-media/css/datatables.bundle.css') }}" rel="stylesheet" type="text/css" />
         <link href="{{ asset('vendor/lara-media/plugins/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
         <link href="{{ asset('vendor/lara-media/css/style.bundle.css') }}" rel="stylesheet" type="text/css" />
 
@@ -24,7 +25,13 @@
             select, option {
                 font: -moz-pull-down-menu;
             }
-
+            #myTable tr[data-dt-row] > td {
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            .select2-selection {
+                border: none !important;
+            }
         </style>
     </head>
     <body class="app-default" data-kt-app-sidebar-fixed="true" data-kt-app-aside-fixed="true">
@@ -38,7 +45,7 @@
                             <div class="app-container container-fluid">
                                 <div class="row gx-5 gx-xl-10">
                                     <livewire:lara-media::album-report />
-                                    <livewire:lara-media::storage-report />
+                                    <livewire:lara-media::storage-report lazy="on-load"/>
                                     <livewire:lara-media::media-table />
                                 </div>
                             </div>
@@ -55,14 +62,18 @@
         </div>
     </div>
 
-    @livewireScripts
-
     <script>var hostUrl = "vendor/lara-media/";</script>
-    <script src="{{ asset('vendor/lara-media/plugins/plugins.bundle.js') }}"></script>
-    <script src="{{ asset('vendor/lara-media/js/scripts.bundle.js') }}"></script>
-
     <script src="{{ asset('vendor/lara-media/js/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ asset('vendor/lara-media/js/datatables.bundle.js') }}"></script>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/percent.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/fonts/notosans-sc.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.8/js/select2.min.js"></script>
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
 
     <script>
         const themeColors = {
@@ -113,6 +124,9 @@
             gray900: '071437',
         };
     </script>
+    <script src="{{ asset('vendor/lara-media/plugins/plugins.bundle.js') }}"></script>
+    <script src="{{ asset('vendor/lara-media/js/scripts.bundle.js') }}"></script>
+    @livewireScripts
     </body>
 </html>
 

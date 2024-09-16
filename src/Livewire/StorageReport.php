@@ -7,24 +7,26 @@ use DB;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
-use Livewire\Attributes\Lazy;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
-use Nhattuanbl\LaraHelper\Helpers\FileHelper;
+use MongoDB\BSON\UTCDateTime;
+use Nhattuanbl\LaraMedia\Contracts\FileAttr;
 use Nhattuanbl\LaraMedia\Models\LaraMedia;
-use Nhattuanbl\LaraMedia\Services\LaraMediaService;
 
-#[Lazy]
 class StorageReport extends Component
 {
     public string $sum_total_size = '0';
     public string $sum_total_unit = 'B';
+    public string $total_size_by_filter;
     public array $xAxis;
     public array $capacityChart;
     public array $filesChart;
+    public string $subTitle = '';
+    public array $tooltipTitle = [];
 
-    /** @var \Illuminate\Database\Eloquent\Collection */
+    /** @var Collection */
     public $albums;
-    public string $viewType = 'month';
+    public string $viewType = 'months';
 
     public function render(): View|Factory|Application
     {
@@ -43,43 +45,35 @@ class StorageReport extends Component
 
     public function setMetrics(): void
     {
-        if ($this->viewType === 'day') {
-            $limit = Carbon::now()->daysInMonth;
+        $match = [];
+        if ($this->viewType === 'days') {
+            $limit = 30;
+            $dateFilter = Carbon::now()->subDays($limit)->startOfDay()->getTimestamp() * 1000;
             $groupBy = [
                 'day' => ['$dayOfMonth' => ['$toDate' => '$created_at']],
-            ];
-            $sort = [
-                'day' => -1,
-            ];
-            $select = [
-
+                'month' => ['$month' => ['$toDate' => '$created_at']],
+                'year' => ['$year' => ['$toDate' => '$created_at']],
             ];
         } else {
             $limit = 12;
+            $dateFilter = Carbon::now()->subMonths($limit)->startOfDay()->getTimestamp() * 1000;
             $groupBy = [
-                'year' => ['$year' => ['$toDate' => '$created_at']],
                 'month' => ['$month' => ['$toDate' => '$created_at']],
-            ];
-            $sort = [
-                'year' => -1,
-                'month' => -1,
-            ];
-            $select = [
-                'year' => '$_id.year',
-                'month' => '$_id.month',
-                'sum_total_files' => 1,
-                'sum_total_size' => 1,
-                '_id' => 0,
+                'year' => ['$year' => ['$toDate' => '$created_at']],
             ];
         }
 
+        $mediaModel = (config('lara-media.model'));
         if ($this->isMongoConnection()) {
-            $this->albums = LaraMedia::raw(function($collection) use ($limit, $groupBy, $sort, $select) {
+            $this->albums = $mediaModel::raw(function($collection) use ($limit, $groupBy, $match, $dateFilter) {
                 return $collection->aggregate([
+                    ...(!empty($match) ? [['$match' => $match]] : []),
                     [
                         '$match' => [
-                            'album' => ['$ne' => LaraMediaService::ALBUM_TEMP],
-                        ],
+                            'created_at' => [
+                                '$gte' => new UTCDateTime($dateFilter),
+                            ],
+                        ]
                     ],
                     [
                         '$group' => [
@@ -89,56 +83,83 @@ class StorageReport extends Component
                         ],
                     ],
                     [
-                        '$project' => $select,
+                        '$project' => [
+                            'year' => '$_id.year',
+                            'month' => '$_id.month',
+                            'day' => '$_id.day',
+                            'sum_total_files' => 1,
+                            'sum_total_size' => 1,
+                            '_id' => 0,
+                        ],
                     ],
                     [
-                        '$sort' => $sort,
+                        '$sort' => [
+                            'year' => -1,
+                            'month' => -1,
+                            'day' => -1,
+                        ]
                     ],
-                    [
-                        '$limit' => $limit,
-                    ],
+                    ['$limit' => $limit],
                 ]);
             });
         } else {
-            $this->albums = LaraMedia::selectRaw(
-                'YEAR(created_at) as year, MONTH(created_at) as month, SUM(total_files) as sum_total_files, SUM(total_size) as sum_total_size'
-            )
-                ->where('album', '!=', LaraMediaService::ALBUM_TEMP)
-                ->groupBy(DB::raw('YEAR(created_at)'), DB::raw('MONTH(created_at)'))
-                ->orderByDesc('year')
-                ->orderByDesc('month')
-                ->get();
+            $this->albums = $mediaModel::selectRaw("
+                YEAR(created_at) as year,
+                MONTH(created_at) as month" . ($this->viewType === 'days' ? ", DAY(created_at) as day" : "") . ",
+                SUM(total_files) as sum_total_files,
+                SUM(total_size) as sum_total_size
+            ")
+                ->where('created_at', '>=', $dateFilter)
+                ->groupBy('year', 'month' . ($this->viewType === 'days' ? ', day' : ''))
+                ->orderBy('year', 'desc')
+                ->orderBy('month', 'desc')
+                ->when($this->viewType === 'days', fn($q) => $q->orderBy('day', 'desc'))
+                ->limit($limit)
+            ->get();
         }
 
-        dd($this->albums);
-
-        $sum_total_size = explode(' ', FileHelper::byte2Readable($this->albums->sum('sum_total_size')));
+        $this->subTitle = 'Storage usage in the last ' . $limit . ' ' . $this->viewType;
+        $sum_total_size = $mediaModel::whereNot('album', LaraMedia::ALBUM_TEMP)->sum('total_size');
+        $sum_total_size = explode(' ', FileAttr::byte2Readable($sum_total_size));
         $this->sum_total_size = $sum_total_size[0];
-        $this->sum_total_unit = mb_strtoupper($sum_total_size[1]);
+        $this->sum_total_unit = $sum_total_size[1];
+        $this->total_size_by_filter = FileAttr::byte2Readable($this->albums->sum('sum_total_size'));
 
         $this->xAxis = [];
-        foreach ($this->albums->reverse()->values() as $a) {
-            $this->xAxis[] = Carbon::createFromFormat('m', $a->month)->format('M') . ($a->month == 1 ? ' ' . $a->year : '');
-        }
-
         $this->capacityChart = [];
         $this->filesChart = [];
-        foreach ($this->albums->reverse()->values() as $a) {
+        $this->tooltipTitle = [];
+        $reversedAlbums = $this->albums->reverse();
+
+        foreach ($reversedAlbums as $k => $a) {
             $this->capacityChart[] = number_format($a->sum_total_size / 1048576, 2);
             $this->filesChart[] = $a->sum_total_files;
+            $date = Carbon::create($a->year, $a->month, $a->day ?? 1);
+            if ($this->viewType === 'days') {
+                if ($k === 0 || $k === $reversedAlbums->count() - 1) $this->xAxis[] = $date->format('M d');
+                else $this->xAxis[] = $date->format('d');
+                $this->tooltipTitle[] = $date->format('M d');
+            } else {
+                if ($k === 0 || $k === $reversedAlbums->count() - 1) $this->xAxis[] = $date->format('M') . ' ' . $a->year;
+                else $this->xAxis[] = $date->format('M');
+                $this->tooltipTitle[] = $date->format('M Y');
+            }
         }
+
     }
 
     public function viewDay(): void
     {
-        $this->viewType = 'day';
+        $this->viewType = 'days';
         $this->setMetrics();
+        $this->dispatch('refresh', $this->tooltipTitle, $this->capacityChart, $this->filesChart, $this->xAxis);
     }
 
     public function viewMonth(): void
     {
-        $this->viewType = 'month';
+        $this->viewType = 'months';
         $this->setMetrics();
+        $this->dispatch('refresh', $this->tooltipTitle, $this->capacityChart, $this->filesChart, $this->xAxis);
     }
 
     public function placeholder(): string

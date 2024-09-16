@@ -9,7 +9,6 @@ use Illuminate\Support\Collection;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Nhattuanbl\LaraMedia\Models\LaraMedia;
-use Nhattuanbl\LaraMedia\Services\LaraMediaService;
 
 #[Lazy]
 class AlbumReport extends Component
@@ -40,14 +39,15 @@ class AlbumReport extends Component
 
     public function setMetrics(): void
     {
+        $mediaModel = (config('lara-media.model'));
         if ($this->isMongoConnection()) {
-            $this->albums = LaraMedia::raw(function($collection) {
+            $this->albums = $mediaModel::raw(function($collection) {
                 return $collection->aggregate([
-                    [
-                        '$match' => [
-                            'album' => ['$ne' => LaraMediaService::ALBUM_TEMP],
-                        ],
-                    ],
+//                    [
+//                        '$match' => [
+//                            'album' => ['$ne' => LaraMediaService::ALBUM_TEMP],
+//                        ],
+//                    ],
                     [
                         '$group' => [
                             '_id' => ['album' => '$album'],
@@ -73,14 +73,9 @@ class AlbumReport extends Component
                 ]);
             });
         } else {
-            $this->albums = LaraMedia::groupBy('album')
-                ->select('album',
-                    LaraMedia::raw('count(*) as sum_files'),
-                    LaraMedia::raw('sum(total_files) as sum_total_files'),
-                    LaraMedia::raw('sum(total_size) as sum_total_size')
-                )
-                ->where('album', '!=', LaraMediaService::ALBUM_TEMP)
-                ->orderByDesc('sum_total_files')
+            $this->albums = $mediaModel::selectRaw('album, COUNT(*) as sum_files, SUM(total_files) as sum_total_files, SUM(total_size) as sum_total_size')
+                ->groupBy('album')
+                ->orderBy('sum_total_files', 'desc')
                 ->get();
         }
 
@@ -88,12 +83,10 @@ class AlbumReport extends Component
         $this->sumTotalFiles = $this->albums->sum('sum_total_files');
         $this->sumFiles = $this->albums->sum('sum_files');
         $this->sumVersions = $this->sumTotalFiles - $this->sumFiles;
-        $this->chartData = $this->albums->map(function ($i) {
-            return [
-                'category' => mb_ucfirst($i->album),
-                'value' => $i->sum_total_files
-            ];
-        })->toArray();
+        $this->chartData = $this->albums->map(fn($i) => [
+            'category' => mb_ucfirst($i->album),
+            'value' => $i->sum_total_files
+        ])->toArray();
     }
 
     public function placeholder(): string

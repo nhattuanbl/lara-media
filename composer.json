@@ -33,15 +33,15 @@
         }
     ],
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "ext-mongodb": "*",
         "ext-imagick": "*",
         "laravel/framework": "*",
         "ralouphie/mimey": "*",
-        "nhattuanbl/lara-helper": "*",
         "guzzlehttp/guzzle": "*",
         "php-ffmpeg/php-ffmpeg": "*",
         "livewire/livewire": ">=3",
-        "intervention/mimesniffer": "*"
+        "imtigger/laravel-job-status": "*",
+        "mongodb/laravel-mongodb": "*"
     }
 }

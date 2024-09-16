@@ -429,6 +429,21 @@ class FFMpegConverter
         $totalWidth = $imgWidth * $this->thumbnailCol + $padding * ($this->thumbnailCol + 1);
         $totalHeight = $imgHeight * $this->thumbnailRow + $padding * ($this->thumbnailRow + 1);
 
+        $maxDimension = 2000;
+        if ($totalWidth > $maxDimension || $totalHeight > $maxDimension) {
+            $scaleFactor = min($maxDimension / $totalWidth, $maxDimension / $totalHeight);
+
+            $totalWidth = (int)($totalWidth * $scaleFactor);
+            $totalHeight = (int)($totalHeight * $scaleFactor);
+
+            foreach ($images as $img) {
+                $img->thumbnailImage((int)($img->getImageWidth() * $scaleFactor), (int)($img->getImageHeight() * $scaleFactor));
+            }
+
+            $imgWidth = $images[0]->getImageWidth();
+            $imgHeight = $images[0]->getImageHeight();
+        }
+
         $composite = new Imagick();
         try {
             $composite->newImage($totalWidth, $totalHeight + 70, new ImagickPixel('white'));
@@ -440,7 +455,6 @@ class FFMpegConverter
             throw new Exception($e);
         }
 
-
         $draw = new ImagickDraw();
         $draw->setFontSize(14);
         $draw->setFillColor(new ImagickPixel('black'));
@@ -451,7 +465,7 @@ class FFMpegConverter
         $videoHeight = $videoStream->get('height');
         $videoBytes = filesize($video->getPathfile());
         $composite->annotateImage($draw, 25, 25, 0,
-            "File size: " . FileAttr::byte2Readable($videoBytes) . " (".number_format($videoBytes)." bytes)\n" .
+            "File size: " . FileAttr::byte2Readable($videoBytes) . " (" . number_format($videoBytes) . " bytes)\n" .
             "Resolution: {$videoWidth}x{$videoHeight}\n" .
             "Duration: " . gmdate("H:i:s", $videoStream->get('duration'))
         );
@@ -467,7 +481,7 @@ class FFMpegConverter
             }
         }
 
-        $output = $this->output . DIRECTORY_SEPARATOR . $this->name . '_thumbs.jpg';;
+        $output = $this->output . DIRECTORY_SEPARATOR . $this->name . '_thumbs.jpg';
         $composite->setImageFormat('jpg');
         $composite->writeImage($output);
 
