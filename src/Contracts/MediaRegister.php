@@ -215,7 +215,9 @@ class MediaRegister
                 throw new FileExistsException($fullPath);
             }
 
+            Storage::disk($this->disk)->makeDirectory($path);
             $fileName = $this->fileAttr->tempName ?? ($this->fileAttr->name . '.' . $this->fileAttr->extension);
+            $media->hash = hash_file('md5', $this->fileAttr->path . '/' . $fileName);
             if (FileAttr::isLocalDisk($this->disk) && $this->fileAttr->isTemporary) {
                 rename($this->fileAttr->path . '/' . $fileName, Storage::disk($this->disk)->path($fullPath));
             } else {
@@ -226,7 +228,6 @@ class MediaRegister
 
             $media->total_files = 1;
             $media->total_size = $this->fileAttr->size;
-            $media->hash = hash_file('md5', $this->fileAttr->path . '/' . $fileName);
             $media->path = $path;
             $media->save();
         } catch (Throwable $e) {
@@ -239,7 +240,7 @@ class MediaRegister
                 $mediaModel = (config('lara-media.model'));
                 $mediaModel::whereKey($this->fileAttr->id)->firstOrFail()->delete();
             } else {
-                unlink($this->fileAttr->path . '/' . $fileName);
+                @unlink($this->fileAttr->path . '/' . $fileName);
             }
         }
 

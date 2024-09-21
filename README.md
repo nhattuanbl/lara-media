@@ -33,13 +33,13 @@ composer require nhattuanbl/lara-media
 
 ```bash
 #publish config
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="config"
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\LaraMediaProvider" --tag="config"
 #publish migration
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="migration"
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\LaraMediaProvider" --tag="migrations"
 #publish view
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="views"
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\LaraMediaProvider" --tag="assets"
 #publish assets
-php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\Providers\LaraMediaServiceProvider" --tag="assets"
+php artisan vendor:publish --provider="Nhattuanbl\LaraMedia\LaraMediaProvider" --tag="views"
 ```
 
 ```bash
@@ -62,6 +62,7 @@ return [
     //dashboard
     'web' => [
         'enabled' => true,
+        'domain' => null,
         'prefix' => 'lara-media',
         'middleware' => ['web'],
     ],
@@ -149,6 +150,7 @@ return [
 ```
 
 ### Usage
+#### Prepare your model
 ```php
 //App\Models\User.php
 use MongoDB\Laravel\Eloquent\HybridRelations;
@@ -227,7 +229,7 @@ class User extends Model
     }
 }
 ```
-
+#### Prepare your controller
 ```php
 //App\Http\Controllers\
 use Nhattuanbl\LaraMedia\Models\LaraMedia;
@@ -263,6 +265,10 @@ use Nhattuanbl\LaraMedia\Models\LaraMedia;
         $version, //optional - null for original version
         ['views' => 1] //optional - allow accessible only 1 time
     );
+```
+#### Web access
+```
+http://localhost/lara-media
 ```
 
 ### Custom uploaded file naming

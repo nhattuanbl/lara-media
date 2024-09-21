@@ -13,6 +13,7 @@ return [
     //dashboard
     'web' => [
         'enabled' => true,
+        'domain' => null,
         'prefix' => 'lara-media',
         'middleware' => ['web'],
     ],
@@ -40,7 +41,7 @@ return [
         'queue' => env('LARA_MEDIA_QUEUE_NAME', 'conversion'),
 
         //temporary directory
-        'temp' => storage_path('temp'),
+        'temp' => sys_get_temp_dir(),
 
         //delete original file after convert
         'keep_original' => env('LARA_MEDIA_KEEP_ORIGINAL', true),

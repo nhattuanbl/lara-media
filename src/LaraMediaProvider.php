@@ -78,6 +78,7 @@ class LaraMediaProvider extends ServiceProvider
     protected function bootDashboard(): void
     {
         Route::group([
+            'domain' => config('lara-media.web.domain', null),
             'prefix' => config('lara-media.web.prefix'),
             'middleware' => config('lara-media.web.middleware'),
             'as' => 'lara-media.',
