@@ -251,6 +251,9 @@ use Nhattuanbl\LaraMedia\Models\LaraMedia;
     $model->addMedia(LaraMedia::findOrFail($id))
         ->withoutResponsive() //optional - disable conversion
         ->toAlbum();
+        
+    //add media from request
+    $model->addMedia(request()->file)->toAlbum();
     
     
     //get original media url
